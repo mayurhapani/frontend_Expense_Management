@@ -16,7 +16,17 @@ import {
   DialogTitle,
   TextField,
   Input,
+  List,
+  ListItem,
+  ListItemText,
+  Checkbox,
+  Paper,
+  Divider,
+  Chip,
+  Box,
+  Pagination,
 } from "@mui/material";
+import { PieChart } from "react-minimal-pie-chart";
 
 const BASE_URL = import.meta.env.VITE_BASE_URL;
 
@@ -28,6 +38,9 @@ export default function Profile() {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedFile, setSelectedFile] = useState(null);
   const [selectedExpenses, setSelectedExpenses] = useState([]);
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(5);
 
   const {
     isLoggedIn,
@@ -245,6 +258,38 @@ export default function Profile() {
     }
   };
 
+  // useEffect(() => {
+  //   const fetchExpensesData = async () => {
+  //     try {
+  //       const expensesData = await fetchExpenses(currentPage, itemsPerPage); // Use current page and items per page
+  //       setExpenses(expensesData);
+  //     } catch (error) {
+  //       toast.error("Failed to fetch expenses");
+  //     }
+  //   };
+
+  //   fetchExpensesData();
+  // }, [currentPage, fetchExpenses, itemsPerPage]);
+
+  // Add parameters for pagination in the fetchExpenses function
+  // const fetchExpenses = async (page = 1, limit = 5) => {
+  //   try {
+  //     const token = localStorage.getItem("token");
+  //     const response = await axios.get(`${BASE_URL}/expenses`, {
+  //       headers: { Authorization: `Bearer ${token}` },
+  //       params: { page, limit },
+  //     });
+  //     return response.data.expenses; // assuming the expenses are in response.data.expenses
+  //   } catch (error) {
+  //     console.error("Error fetching expenses:", error);
+  //     throw error;
+  //   }
+  // };
+
+  const handlePageChange = (event, page) => {
+    setCurrentPage(page);
+  };
+
   return (
     <div className="bg-gray-100 min-h-screen pt-20">
       <div className="container mx-auto px-4">
@@ -327,41 +372,92 @@ export default function Profile() {
           </ul>
         </div>
 
-        <div className="mb-6">
-          <Typography variant="h5" component="h2" gutterBottom>
-            Expense List
-          </Typography>
-          {expenses.map((expense) => (
-            <div key={expense._id} className="flex items-center mb-2">
-              <input
-                type="checkbox"
-                checked={selectedExpenses.includes(expense._id)}
-                onChange={() => toggleExpenseSelection(expense._id)}
-                className="mr-2"
+        <Box className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          {/* Expense List */}
+          <Paper elevation={3} className="p-4">
+            <Typography variant="h5" component="h2" gutterBottom>
+              Expense List
+            </Typography>
+            <List dense>
+              {expenses.map((expense) => (
+                <ListItem
+                  key={expense._id}
+                  secondaryAction={
+                    <Checkbox
+                      edge="end"
+                      onChange={() => toggleExpenseSelection(expense._id)}
+                      checked={selectedExpenses.includes(expense._id)}
+                    />
+                  }
+                  disablePadding
+                >
+                  <ListItemText
+                    primary={expense.description}
+                    secondary={`$${expense.amount.toFixed(2)} - ${new Date(
+                      expense.date
+                    ).toLocaleDateString()}`}
+                  />
+                </ListItem>
+              ))}
+            </List>
+            {/* Pagination Component */}
+            <Box display="flex" justifyContent="center" marginTop={2}>
+              <Pagination
+                count={Math.ceil(expenses.length / itemsPerPage)} // Total number of pages
+                page={currentPage}
+                onChange={handlePageChange}
+                color="primary"
               />
-              <span>
-                {expense.description} - ${expense.amount}
-              </span>
-            </div>
-          ))}
-        </div>
+            </Box>
+          </Paper>
 
-        <div className="mb-6">
-          <Typography variant="h5" component="h2" gutterBottom>
-            Expense Summary
-          </Typography>
-          <Typography variant="body1">Total Expenses: ${totalExpenses.toFixed(2)}</Typography>
-          <Typography variant="h6" component="h3" gutterBottom>
-            Top Expense Categories:
-          </Typography>
-          <ul>
-            {Object.values(expenseCategories).map((category, index) => (
-              <li key={index}>
-                {category.name}: ${category.total.toFixed(2)}
-              </li>
-            ))}
-          </ul>
-        </div>
+          {/* Expense Summary and Top Categories */}
+          <Paper elevation={3} className="p-4">
+            <Typography variant="h5" component="h2" gutterBottom>
+              Expense Summary
+            </Typography>
+            <Typography variant="h4" className="mb-4">
+              Total: ${totalExpenses.toFixed(2)}
+            </Typography>
+
+            <Divider className="my-4" />
+
+            <Typography variant="h6" component="h3" gutterBottom>
+              Top Expense Categories
+            </Typography>
+            <Box className="flex justify-between items-center mb-4">
+              <Box className="w-1/2">
+                <PieChart
+                  data={Object.values(expenseCategories).map((category, index) => ({
+                    title: category.name,
+                    value: category.total,
+                    color: `hsl(${index * 137.5}, 70%, 50%)`,
+                  }))}
+                  lineWidth={20}
+                  paddingAngle={5}
+                  labelStyle={{
+                    fontSize: "5px",
+                    fontFamily: "sans-serif",
+                  }}
+                  label={({ dataEntry }) => `${dataEntry.title}`}
+                />
+              </Box>
+              <Box className="w-1/2">
+                {Object.values(expenseCategories).map((category, index) => (
+                  <Chip
+                    key={index}
+                    label={`${category.name}: $${category.total.toFixed(2)}`}
+                    style={{
+                      backgroundColor: `hsl(${index * 137.5}, 70%, 50%)`,
+                      color: "white",
+                      margin: "4px",
+                    }}
+                  />
+                ))}
+              </Box>
+            </Box>
+          </Paper>
+        </Box>
       </div>
 
       {/* Settings Dialog */}
