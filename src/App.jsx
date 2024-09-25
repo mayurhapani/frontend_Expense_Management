@@ -1,17 +1,29 @@
 import { useContext } from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import { AuthContext } from "./context/AuthProvider.jsx";
-import Header from "./components/Header.jsx";
-import Home from "./pages/Home.jsx";
-import Profile from "./pages/Profile.jsx";
-import Signin from "./pages/Signin.jsx";
-import GlobalLoader from "./components/GlobalLoader.jsx";
-import Signup from "./pages/Signup.jsx";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import PropTypes from "prop-types";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import ManageBooks from "./pages/ManageBooks.jsx";
-import BookDetails from "./components/BookDetails";
-import EditBook from "./pages/EditBook";
+
+import { AuthContext } from "./context/AuthProvider.jsx";
+import Header from "./components/Header.jsx";
+import GlobalLoader from "./components/GlobalLoader.jsx";
+import Dashboard from "./pages/Dashboard.jsx";
+import Profile from "./pages/Profile.jsx";
+import Signin from "./pages/Signin.jsx";
+import Signup from "./pages/Signup.jsx";
+
+const ProtectedRoute = ({ children }) => {
+  const { isLoggedIn, loading } = useContext(AuthContext);
+
+  if (loading) return <GlobalLoader />;
+  if (!isLoggedIn) return <Navigate to="/signin" />;
+
+  return children;
+};
+
+ProtectedRoute.propTypes = {
+  children: PropTypes.node.isRequired,
+};
 
 function App() {
   const { loading } = useContext(AuthContext);
@@ -25,13 +37,24 @@ function App() {
             <GlobalLoader />
           ) : (
             <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/profile" element={<Profile />} />
               <Route path="/signin" element={<Signin />} />
               <Route path="/signup" element={<Signup />} />
-              <Route path="/books" element={<ManageBooks />} />
-              <Route path="/books/:id" element={<BookDetails />} />
-              <Route path="/edit-book/:id" element={<EditBook />} />
+              <Route
+                path="/"
+                element={
+                  <ProtectedRoute>
+                    <Dashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/profile"
+                element={
+                  <ProtectedRoute>
+                    <Profile />
+                  </ProtectedRoute>
+                }
+              />
             </Routes>
           )}
         </main>

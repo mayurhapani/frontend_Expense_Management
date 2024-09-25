@@ -6,6 +6,15 @@ import PropTypes from "prop-types";
 // Set axios to always send credentials
 axios.defaults.withCredentials = true;
 
+// Add this function near the top of the file
+const decodeToken = (token) => {
+  try {
+    return JSON.parse(atob(token.split(".")[1]));
+  } catch (e) {
+    return null;
+  }
+};
+
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
@@ -46,25 +55,42 @@ export const AuthProvider = ({ children }) => {
     try {
       setLoading(true);
       const token = getToken();
-      console.log("Checking login status, token:", token ? "exists" : "not found");
+      console.log(
+        "Checking login status, token:",
+        token ? token.substring(0, 10) + "..." : "not found"
+      );
 
       if (token) {
-        const response = await axios.get(`${BASE_URL}/users/getUser`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        console.log("User data response:", response.data);
+        try {
+          const response = await axios.get(`${BASE_URL}/users/getUser`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          console.log("User data response:", response.data);
 
-        if (response.data.success && response.data.data) {
-          const userData = response.data.data;
-          console.log("User data:", userData);
+          if (response.data.success && response.data.data) {
+            const userData = response.data.data;
+            console.log("User data:", userData);
 
-          setUser(userData);
-          setIsLoggedIn(true);
-          setUserName(userData.name || "");
-          setUserRole(userData.role || "");
-        } else {
-          console.error("Invalid user data structure:", response.data);
-          throw new Error("Invalid user data received");
+            setUser(userData);
+            setIsLoggedIn(true);
+            setUserName(userData.name || "");
+            setUserRole(userData.role || "");
+          } else {
+            console.error("Invalid user data structure:", response.data);
+            throw new Error("Invalid user data received");
+          }
+        } catch (error) {
+          console.error("Error fetching user data:", error);
+          if (error.response) {
+            console.error("Response data:", error.response.data);
+            console.error("Response status:", error.response.status);
+            console.error("Response headers:", error.response.headers);
+          } else if (error.request) {
+            console.error("No response received:", error.request);
+          } else {
+            console.error("Error setting up request:", error.message);
+          }
+          throw error;
         }
       } else {
         console.log("No token found, user is not logged in");
@@ -94,26 +120,28 @@ export const AuthProvider = ({ children }) => {
       console.log("Attempting login...");
       const response = await axios.post(
         `${BASE_URL}/users/login`,
-        {
-          email,
-          password,
-        },
-        {
-          withCredentials: true,
-        }
+        { email, password },
+        { withCredentials: true }
       );
       console.log("Login response:", response.data);
 
       if (response.data.success && response.data.data && response.data.data.token) {
         setToken(response.data.data.token);
+        console.log("Token saved:", response.data.data.token);
+        console.log("Decoded token:", decodeToken(response.data.data.token));
+
         setIsLoggedIn(true);
         setUser(response.data.data.user);
         setUserName(response.data.data.user.name || "");
         setUserRole(response.data.data.user.role || "");
 
-        // Add a small delay before checking login status
+        // Add a delay before checking login status
         setTimeout(async () => {
-          await checkLoginStatus();
+          try {
+            await checkLoginStatus();
+          } catch (error) {
+            console.error("Error in delayed checkLoginStatus:", error);
+          }
         }, 1000);
       } else {
         console.error("Invalid login response structure:", response.data);

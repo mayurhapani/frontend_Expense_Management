@@ -31,9 +31,11 @@ const Signup = () => {
   };
 
   return (
-    <div className="bg-gradient-to-r from-blue-100 to-indigo-100 min-h-screen flex items-center justify-center">
+    <div className="bg-gradient-to-r from-green-100 to-green-200 min-h-screen flex items-center justify-center">
       <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
-        <h1 className="text-3xl font-bold text-center text-indigo-700 mb-6">E-Library Sign Up</h1>
+        <h1 className="text-3xl font-bold text-center text-green-700 mb-6">
+          Expense Manager Sign Up
+        </h1>
         <form className="space-y-4" onSubmit={handleSubmit}>
           <div>
             <label htmlFor="name" className="block text-sm font-medium text-gray-700">
@@ -82,14 +84,14 @@ const Signup = () => {
           </div>
           <button
             type="submit"
-            className="w-full bg-indigo-600 text-white rounded-md py-2 px-4 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50"
+            className="w-full bg-green-600 text-white rounded-md py-2 px-4 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50"
           >
             Sign Up
           </button>
         </form>
         <p className="mt-4 text-center text-sm text-gray-600">
           Already have an account?{" "}
-          <Link to="/signin" className="text-indigo-600 hover:text-indigo-500">
+          <Link to="/signin" className="text-green-600 hover:text-green-500">
             Sign In
           </Link>
         </p>
