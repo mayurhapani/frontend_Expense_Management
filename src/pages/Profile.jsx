@@ -1,5 +1,5 @@
 import { useState, useContext, useEffect, useCallback } from "react";
-import { FaCog } from "react-icons/fa";
+import { FaCog, FaUpload, FaTrash, FaDownload } from "react-icons/fa";
 import { AuthContext } from "../context/AuthProvider";
 import { useExpenses } from "../hooks/useExpenses.js";
 import axios from "axios";
@@ -9,13 +9,16 @@ import GlobalLoader from "../components/GlobalLoader";
 import {
   Typography,
   Button,
-  TextField,
   Dialog,
   DialogActions,
   DialogContent,
   DialogContentText,
   DialogTitle,
+  TextField,
+  Input,
 } from "@mui/material";
+
+const BASE_URL = import.meta.env.VITE_BASE_URL;
 
 export default function Profile() {
   const [showSettings, setShowSettings] = useState(false);
@@ -23,6 +26,8 @@ export default function Profile() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [selectedExpenses, setSelectedExpenses] = useState([]);
 
   const {
     isLoggedIn,
@@ -32,8 +37,6 @@ export default function Profile() {
     loading: authLoading,
   } = useContext(AuthContext);
   const { expenses, fetchExpenses } = useExpenses();
-  const BASE_URL = import.meta.env.VITE_BASE_URL;
-
   const navigate = useNavigate();
 
   const fetchUserData = useCallback(async () => {
@@ -125,6 +128,123 @@ export default function Profile() {
     }
   };
 
+  const handleFileChange = (event) => {
+    setSelectedFile(event.target.files[0]);
+  };
+
+  const handleBulkUpload = async () => {
+    if (!selectedFile) {
+      toast.error("Please select a CSV file to upload");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", selectedFile);
+
+    try {
+      const token = localStorage.getItem("token");
+      const response = await axios.post(`${BASE_URL}/expenses/bulk-upload`, formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      console.log("Response:", response.data);
+
+      if (response.data.statusCode === 201) {
+        toast.success(response.data.message);
+        fetchExpenses();
+      } else if (response.data.statusCode === 400) {
+        const errorMessages = response.data.data.errors.join("\n");
+        const validCount = response.data.data.validCount;
+
+        toast.error(
+          <div>
+            <p>Validation errors in CSV:</p>
+            <pre style={{ maxHeight: "200px", overflowY: "auto" }}>{errorMessages}</pre>
+            <p>{`${validCount} valid expenses found.`}</p>
+            <p>Please correct the errors and try again.</p>
+          </div>,
+          { autoClose: false }
+        );
+      }
+    } catch (error) {
+      console.error("Error uploading expenses:", error);
+      console.error("Error response:", error.response?.data);
+      if (error.response?.data?.statusCode === 400) {
+        const errorMessages = error.response.data.data.errors.join("\n");
+        const validCount = error.response.data.data.validCount;
+
+        toast.error(
+          <div>
+            <p>Validation errors in CSV:</p>
+            <pre style={{ maxHeight: "200px", overflowY: "auto" }}>{errorMessages}</pre>
+            <p>{`${validCount} valid expenses found.`}</p>
+            <p>Please correct the errors and try again.</p>
+          </div>,
+          { autoClose: false }
+        );
+      } else {
+        toast.error(error.response?.data?.message || "Error uploading expenses. Please try again.");
+      }
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedExpenses.length === 0) {
+      toast.error("Please select expenses to delete");
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem("token");
+      await axios.post(
+        `${BASE_URL}/expenses/bulk-delete`,
+        { ids: selectedExpenses },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      toast.success("Selected expenses deleted successfully");
+      setSelectedExpenses([]);
+      fetchExpenses();
+    } catch (error) {
+      console.error("Error deleting expenses:", error);
+      toast.error(error.response?.data?.message || "Error deleting expenses. Please try again.");
+    }
+  };
+
+  const toggleExpenseSelection = (expenseId) => {
+    setSelectedExpenses((prevSelected) =>
+      prevSelected.includes(expenseId)
+        ? prevSelected.filter((id) => id !== expenseId)
+        : [...prevSelected, expenseId]
+    );
+  };
+
+  const handleExport = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await axios.get(`${BASE_URL}/expenses/export`, {
+        headers: { Authorization: `Bearer ${token}` },
+        responseType: "blob", // Important for handling file downloads
+      });
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", "expenses.csv");
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      toast.success("Expenses exported successfully");
+    } catch (error) {
+      console.error("Error exporting expenses:", error);
+      toast.error("Error exporting expenses. Please try again.");
+    }
+  };
+
   return (
     <div className="bg-gray-100 min-h-screen pt-20">
       <div className="container mx-auto px-4">
@@ -142,6 +262,88 @@ export default function Profile() {
           <Typography variant="body1" color="textSecondary">
             Email: {user?.email}
           </Typography>
+        </div>
+
+        <div className="mb-6">
+          <Typography variant="h5" component="h2" gutterBottom>
+            Bulk Actions
+          </Typography>
+          <div className="flex space-x-4">
+            <div>
+              <Input
+                type="file"
+                onChange={handleFileChange}
+                style={{ display: "none" }}
+                id="csv-upload"
+              />
+              <label htmlFor="csv-upload">
+                <Button variant="contained" component="span" startIcon={<FaUpload />}>
+                  Select CSV
+                </Button>
+              </label>
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={handleBulkUpload}
+                disabled={!selectedFile}
+                className="ml-2"
+              >
+                Upload Expenses
+              </Button>
+            </div>
+            <Button
+              variant="contained"
+              color="secondary"
+              startIcon={<FaTrash />}
+              onClick={handleBulkDelete}
+              disabled={selectedExpenses.length === 0}
+            >
+              Delete Selected
+            </Button>
+            <Button
+              variant="contained"
+              color="primary"
+              startIcon={<FaDownload />}
+              onClick={handleExport}
+            >
+              Export Expenses
+            </Button>
+          </div>
+        </div>
+
+        <div className="mb-4">
+          <Typography variant="h6" component="h3" gutterBottom>
+            CSV Upload Instructions
+          </Typography>
+          <ul className="list-disc pl-5">
+            <li>
+              The CSV file should have the following columns: amount, description, date, category,
+              paymentMethod
+            </li>
+            <li>Amount should be a number (e.g., 10.99)</li>
+            <li>Date should be in M/D/YYYY format (e.g., 5/15/2023)</li>
+            <li>All fields are required</li>
+            <li>Remove any empty rows at the end of your CSV file</li>
+          </ul>
+        </div>
+
+        <div className="mb-6">
+          <Typography variant="h5" component="h2" gutterBottom>
+            Expense List
+          </Typography>
+          {expenses.map((expense) => (
+            <div key={expense._id} className="flex items-center mb-2">
+              <input
+                type="checkbox"
+                checked={selectedExpenses.includes(expense._id)}
+                onChange={() => toggleExpenseSelection(expense._id)}
+                className="mr-2"
+              />
+              <span>
+                {expense.description} - ${expense.amount}
+              </span>
+            </div>
+          ))}
         </div>
 
         <div className="mb-6">
