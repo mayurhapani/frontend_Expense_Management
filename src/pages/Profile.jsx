@@ -1,6 +1,7 @@
 import { useState, useContext, useEffect, useCallback } from "react";
 import { FaCog } from "react-icons/fa";
 import { AuthContext } from "../context/AuthProvider";
+import { useExpenses } from "../hooks/useExpenses.js";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
@@ -22,8 +23,6 @@ export default function Profile() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(true);
-  const [totalExpenses, setTotalExpenses] = useState(0);
-  const [expenseCategories, setExpenseCategories] = useState([]);
 
   const {
     isLoggedIn,
@@ -32,6 +31,7 @@ export default function Profile() {
     checkLoginStatus,
     loading: authLoading,
   } = useContext(AuthContext);
+  const { expenses, fetchExpenses } = useExpenses();
   const BASE_URL = import.meta.env.VITE_BASE_URL;
 
   const navigate = useNavigate();
@@ -43,20 +43,14 @@ export default function Profile() {
       });
       setName(response?.data?.data?.name);
       setEmail(response?.data?.data?.email);
-
-      // Fetch user's expense summary
-      const expenseSummary = await axios.get(`${BASE_URL}/expenses/summary`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-      });
-      setTotalExpenses(expenseSummary.data.totalExpenses);
-      setExpenseCategories(expenseSummary.data.categories);
+      await fetchExpenses();
     } catch (error) {
       console.error("Error fetching user data:", error);
       toast.error("Failed to fetch user data");
     } finally {
       setIsLoading(false);
     }
-  }, [BASE_URL]);
+  }, [BASE_URL, fetchExpenses]);
 
   useEffect(() => {
     const initializeProfile = async () => {
@@ -71,6 +65,16 @@ export default function Profile() {
 
     initializeProfile();
   }, [isLoggedIn, navigate, fetchUserData, authLoading]);
+
+  // Calculate totalExpenses and expenseCategories from the expenses array
+  const totalExpenses = expenses.reduce((total, expense) => total + expense.amount, 0);
+  const expenseCategories = expenses.reduce((acc, expense) => {
+    if (!acc[expense.category]) {
+      acc[expense.category] = { name: expense.category, total: 0 };
+    }
+    acc[expense.category].total += expense.amount;
+    return acc;
+  }, {});
 
   if (authLoading || isLoading) {
     return <GlobalLoader />;
@@ -125,12 +129,13 @@ export default function Profile() {
     <div className="bg-gray-100 min-h-screen pt-20">
       <div className="container mx-auto px-4">
         <div className="bg-white rounded-lg shadow-md p-6 mb-6 relative">
-          <Button
+          <button
             onClick={() => setShowSettings(true)}
-            className="absolute top-4 right-4 text-gray-600 hover:text-gray-800 transition-colors"
+            className="absolute top-4 right-4 text-blue-800 hover:text-gray-800 focus:outline-none"
+            aria-label="Open settings"
           >
             <FaCog size={24} />
-          </Button>
+          </button>
           <Typography variant="h4" component="h1" gutterBottom>
             {user?.name?.replace(/'/g, "&apos;")}&apos;s Profile
           </Typography>
@@ -148,7 +153,7 @@ export default function Profile() {
             Top Expense Categories:
           </Typography>
           <ul>
-            {expenseCategories.map((category, index) => (
+            {Object.values(expenseCategories).map((category, index) => (
               <li key={index}>
                 {category.name}: ${category.total.toFixed(2)}
               </li>

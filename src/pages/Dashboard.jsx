@@ -1,105 +1,144 @@
-import { useState, useEffect } from "react";
-import { Container, Grid, Typography } from "@mui/material";
+import { useEffect, useState } from "react";
+import { Container, Grid, Typography, CircularProgress, TextField, MenuItem, Button, Pagination } from "@mui/material";
 import ExpenseForm from "../components/ExpenseForm";
 import ExpenseList from "../components/ExpenseList";
 import ExpenseChart from "../components/ExpenseChart";
+import MonthlyComparisonChart from "../components/MonthlyComparisonChart";
 import { motion } from "framer-motion";
-import axios from "axios";
-import { toast } from "react-toastify";
+import { useExpenses } from "../hooks/useExpenses.js";
 
 const Dashboard = () => {
-  const [expenses, setExpenses] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { expenses, loading, addExpense, editExpense, deleteExpense, fetchExpenses, totalPages } = useExpenses();
+  const [sortConfig, setSortConfig] = useState({ key: 'date', direction: 'descending' });
+  const [filterCategory, setFilterCategory] = useState('');
+  const [filterDateFrom, setFilterDateFrom] = useState('');
+  const [filterDateTo, setFilterDateTo] = useState('');
+  const [page, setPage] = useState(1);
 
   useEffect(() => {
-    fetchExpenses();
-  }, []);
+    fetchExpenses(page, filterCategory, filterDateFrom, filterDateTo);
+  }, [fetchExpenses, page, filterCategory, filterDateFrom, filterDateTo]);
 
-  const fetchExpenses = async () => {
-    try {
-      setLoading(true);
-      const token = localStorage.getItem("token");
-      const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/expenses`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setExpenses(Array.isArray(response.data.data) ? response.data.data : []);
-      console.log("Fetched expenses:", response.data.data); // For debugging
-    } catch (error) {
-      console.error("Error fetching expenses:", error);
-      setExpenses([]);
+  const handleSort = (key) => {
+    let direction = 'ascending';
+    if (sortConfig.key === key && sortConfig.direction === 'ascending') {
+      direction = 'descending';
     }
+    setSortConfig({ key, direction });
   };
 
-  const handleAddExpense = async (newExpense) => {
-    try {
-      const response = await axios.post(`${import.meta.env.VITE_BASE_URL}/expenses`, newExpense, {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-      });
-      setExpenses([...expenses, response.data.data]);
-      toast.success("Expense added successfully!");
-    } catch (error) {
-      console.error("Error adding expense:", error);
-      toast.error("Failed to add expense. Please try again.");
-    }
+  const handlePageChange = (event, value) => {
+    setPage(value);
   };
 
-  const handleEditExpense = async (id, updatedExpense) => {
-    try {
-      const response = await axios.patch(
-        `${import.meta.env.VITE_BASE_URL}/expenses/${id}`,
-        updatedExpense,
-        {
-          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-        }
-      );
-      setExpenses(expenses.map((expense) => (expense._id === id ? response.data.data : expense)));
-      toast.success("Expense updated successfully!");
-    } catch (error) {
-      console.error("Error updating expense:", error);
-      toast.error("Failed to update expense. Please try again.");
-    }
+  const clearFilters = () => {
+    setFilterCategory('');
+    setFilterDateFrom('');
+    setFilterDateTo('');
+    setPage(1);
   };
 
-  const handleDeleteExpense = async (id) => {
-    try {
-      await axios.delete(`${import.meta.env.VITE_BASE_URL}/expenses/${id}`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-      });
-      setExpenses(expenses.filter((expense) => expense._id !== id));
-      toast.success("Expense deleted successfully!");
-    } catch (error) {
-      console.error("Error deleting expense:", error);
-      toast.error("Failed to delete expense. Please try again.");
+  const categories = [...new Set(expenses.map(expense => expense.category))];
+
+  const sortedExpenses = [...expenses].sort((a, b) => {
+    if (a[sortConfig.key] < b[sortConfig.key]) {
+      return sortConfig.direction === 'ascending' ? -1 : 1;
     }
-  };
+    if (a[sortConfig.key] > b[sortConfig.key]) {
+      return sortConfig.direction === 'ascending' ? 1 : -1;
+    }
+    return 0;
+  });
 
   return (
     <Container maxWidth="lg" className="py-8">
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}>
-        <Typography
-          variant="h3"
-          component="h1"
-          gutterBottom
-          className="text-center text-indigo-600"
-        >
+        <Typography variant="h3" component="h1" gutterBottom className="text-center text-indigo-600">
           Expense Dashboard
         </Typography>
-        <Grid container spacing={4}>
-          <Grid item xs={12} md={6}>
-            <ExpenseForm onSubmit={handleAddExpense} />
+        {loading ? (
+          <div className="flex justify-center items-center h-64">
+            <CircularProgress />
+          </div>
+        ) : (
+          <Grid container spacing={4}>
+            <Grid item xs={12} md={6}>
+              <ExpenseForm onSubmit={addExpense} />
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <ExpenseChart expenses={sortedExpenses} />
+            </Grid>
+            <Grid item xs={12}>
+              <MonthlyComparisonChart expenses={expenses} />
+            </Grid>
+            <Grid item xs={12}>
+              <Typography variant="h5" gutterBottom>Filters</Typography>
+              <Grid container spacing={2} alignItems="center">
+                <Grid item xs={12} sm={3}>
+                  <TextField
+                    select
+                    fullWidth
+                    label="Category"
+                    value={filterCategory}
+                    onChange={(e) => setFilterCategory(e.target.value)}
+                  >
+                    <MenuItem value="">All Categories</MenuItem>
+                    {categories.map((category) => (
+                      <MenuItem key={category} value={category}>{category}</MenuItem>
+                    ))}
+                  </TextField>
+                </Grid>
+                <Grid item xs={12} sm={3}>
+                  <TextField
+                    type="date"
+                    fullWidth
+                    label="From Date"
+                    InputLabelProps={{ shrink: true }}
+                    value={filterDateFrom}
+                    onChange={(e) => setFilterDateFrom(e.target.value)}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={3}>
+                  <TextField
+                    type="date"
+                    fullWidth
+                    label="To Date"
+                    InputLabelProps={{ shrink: true }}
+                    value={filterDateTo}
+                    onChange={(e) => setFilterDateTo(e.target.value)}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={3}>
+                  <Button
+                    variant="outlined"
+                    color="secondary"
+                    onClick={clearFilters}
+                    fullWidth
+                  >
+                    Clear Filters
+                  </Button>
+                </Grid>
+              </Grid>
+            </Grid>
+            <Grid item xs={12}>
+              <ExpenseList
+                expenses={sortedExpenses}
+                onEdit={editExpense}
+                onDelete={deleteExpense}
+                onSort={handleSort}
+                sortConfig={sortConfig}
+              />
+            </Grid>
+            <Grid item xs={12} display="flex" justifyContent="center">
+              <Pagination
+                count={totalPages}
+                page={page}
+                onChange={handlePageChange}
+                color="primary"
+              />
+            </Grid>
           </Grid>
-          <Grid item xs={12} md={6}>
-            <ExpenseChart expenses={expenses} />
-          </Grid>
-          <Grid item xs={12}>
-            <ExpenseList
-              expenses={expenses}
-              onEdit={handleEditExpense}
-              onDelete={handleDeleteExpense}
-              loading={loading}
-            />
-          </Grid>
-        </Grid>
+        )}
       </motion.div>
     </Container>
   );

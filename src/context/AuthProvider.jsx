@@ -55,21 +55,15 @@ export const AuthProvider = ({ children }) => {
     try {
       setLoading(true);
       const token = getToken();
-      console.log(
-        "Checking login status, token:",
-        token ? token.substring(0, 10) + "..." : "not found"
-      );
 
       if (token) {
         try {
           const response = await axios.get(`${BASE_URL}/users/getUser`, {
             headers: { Authorization: `Bearer ${token}` },
           });
-          console.log("User data response:", response.data);
 
           if (response.data.success && response.data.data) {
             const userData = response.data.data;
-            console.log("User data:", userData);
 
             setUser(userData);
             setIsLoggedIn(true);

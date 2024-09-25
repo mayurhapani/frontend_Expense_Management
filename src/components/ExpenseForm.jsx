@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { TextField, Button, MenuItem, Paper } from "@mui/material";
+import { TextField, Button, MenuItem, Paper, FormControl, InputLabel, Select } from "@mui/material";
 import { motion } from "framer-motion";
-import PropTypes from 'prop-types';
+import PropTypes from "prop-types";
 
 const ExpenseForm = ({ onSubmit }) => {
   const [expense, setExpense] = useState({
@@ -11,6 +11,15 @@ const ExpenseForm = ({ onSubmit }) => {
     category: "",
     paymentMethod: "",
   });
+
+  const categoryOptions = [
+    "Food",
+    "Transportation",
+    "Entertainment",
+    "Utilities",
+    "Other",
+    "Transport",
+  ];
 
   const handleChange = (e) => {
     setExpense({ ...expense, [e.target.name]: e.target.value });
@@ -57,20 +66,16 @@ const ExpenseForm = ({ onSubmit }) => {
             InputLabelProps={{ shrink: true }}
             required
           />
-          <TextField
-            fullWidth
-            select
-            label="Category"
-            name="category"
-            value={expense.category}
-            onChange={handleChange}
-            required
-          >
-            <MenuItem value="Food">Food</MenuItem>
-            <MenuItem value="Transport">Transport</MenuItem>
-            <MenuItem value="Entertainment">Entertainment</MenuItem>
-            <MenuItem value="Utilities">Utilities</MenuItem>
-          </TextField>
+          <FormControl fullWidth margin="normal">
+            <InputLabel>Category</InputLabel>
+            <Select name="category" value={expense.category} onChange={handleChange} required>
+              {categoryOptions.map((category) => (
+                <MenuItem key={category} value={category}>
+                  {category}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
           <TextField
             fullWidth
             select

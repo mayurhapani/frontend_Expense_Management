@@ -5,6 +5,7 @@ import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 import { AuthContext } from "./context/AuthProvider.jsx";
+import { ExpenseProvider } from './context/ExpenseContext'; // Add this import
 import Header from "./components/Header.jsx";
 import GlobalLoader from "./components/GlobalLoader.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
@@ -29,38 +30,40 @@ function App() {
   const { loading } = useContext(AuthContext);
 
   return (
-    <Router>
-      <div className="flex flex-col min-h-screen">
-        <Header />
-        <main className="flex-grow">
-          {loading ? (
-            <GlobalLoader />
-          ) : (
-            <Routes>
-              <Route path="/signin" element={<Signin />} />
-              <Route path="/signup" element={<Signup />} />
-              <Route
-                path="/"
-                element={
-                  <ProtectedRoute>
-                    <Dashboard />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/profile"
-                element={
-                  <ProtectedRoute>
-                    <Profile />
-                  </ProtectedRoute>
-                }
-              />
-            </Routes>
-          )}
-        </main>
-        <ToastContainer />
-      </div>
-    </Router>
+    <ExpenseProvider> {/* Add this wrapper */}
+      <Router>
+        <div className="flex flex-col min-h-screen">
+          <Header />
+          <main className="flex-grow">
+            {loading ? (
+              <GlobalLoader />
+            ) : (
+              <Routes>
+                <Route path="/signin" element={<Signin />} />
+                <Route path="/signup" element={<Signup />} />
+                <Route
+                  path="/"
+                  element={
+                    <ProtectedRoute>
+                      <Dashboard />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/profile"
+                  element={
+                    <ProtectedRoute>
+                      <Profile />
+                    </ProtectedRoute>
+                  }
+                />
+              </Routes>
+            )}
+          </main>
+          <ToastContainer />
+        </div>
+      </Router>
+    </ExpenseProvider>
   );
 }
 
