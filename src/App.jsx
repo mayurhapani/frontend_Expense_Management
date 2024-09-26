@@ -5,7 +5,7 @@ import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 import { AuthContext } from "./context/AuthProvider.jsx";
-import { ExpenseProvider } from './context/ExpenseContext'; // Add this import
+import { ExpenseProvider } from "./context/ExpenseContext"; // Add this import
 import Header from "./components/Header.jsx";
 import GlobalLoader from "./components/GlobalLoader.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
@@ -20,7 +20,7 @@ const ProtectedRoute = ({ children }) => {
   if (!isLoggedIn) return <Navigate to="/signin" />;
 
   return children;
-};
+};  
 
 ProtectedRoute.propTypes = {
   children: PropTypes.node.isRequired,
@@ -30,7 +30,9 @@ function App() {
   const { loading } = useContext(AuthContext);
 
   return (
-    <ExpenseProvider> {/* Add this wrapper */}
+    <ExpenseProvider>
+      {" "}
+      {/* Add this wrapper */}
       <Router>
         <div className="flex flex-col min-h-screen">
           <Header />
