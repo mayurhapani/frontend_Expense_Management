@@ -1,28 +1,121 @@
-# React + Vite
+# Expense Management Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This is the frontend application for an Expense Management system, built with React and Vite.
 
-Currently, two official plugins are available:
+## Live Demo
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+You can access the live application here: https://frontend-expense-management.vercel.app
 
-VITE_BASE_URL=http://localhost:8001
+## Features
 
-github link = https://github.com/mayurhapani/frontend_E-Library-Management.git
+- User authentication (login/signup)
+- Dashboard with expense overview
+- Add, edit, and delete expenses
+- Categorize expenses
+- Visualize expenses with charts
+- CSV import/export functionality
+- Responsive design for mobile and desktop
 
-live url = https://frontend-e-library-management.vercel.app/
+## Technologies Used
 
-admin email = hapanimayur@gmail.com
-password = Mayur@123
+- React 18
+- Vite
+- Material-UI
+- Axios for API requests
+- Chart.js for data visualization
+- React Router for navigation
+- React Toastify for notifications
+- Tailwind CSS for styling
 
-by default user roll = user
-only one admin // can not register new admin for security
+## Getting Started
 
-on home page user can see all books given by admin
+### Prerequisites
 
-only admin have right to create new book and create CRUD with books
+- Node.js (v14 or later recommended)
+- npm or yarn
 
-user can borrow book and see their profile page which have list of all books borrowed by user
+### Installation
 
-user cab borrow books after login
+1. Clone the repository:
+
+   ```bash
+   git clone https://github.com/mayurhapani/frontend_Expense_Management.git
+   ```
+
+2. Navigate to the project directory:
+
+   ```bash
+   cd frontend_Expense_Management
+   ```
+
+3. Install dependencies:
+
+   ```bash
+   npm install
+   ```
+
+   or if you're using yarn:
+
+   ```bash
+   yarn
+   ```
+
+4. Create a `.env` file in the root directory and add the following:
+   ```bash
+   VITE_BASE_URL=http://localhost:8001
+   ```
+   Replace the URL with your backend API URL if different.
+
+### Running the Application
+
+To start the development server:
+
+```
+npm run dev
+```
+
+or with yarn:
+
+```
+yarn dev
+```
+
+The application will be available at `http://localhost:5173` (or the next available port).
+
+## Building for Production
+
+To create a production build:
+
+```
+npm run build
+```
+
+or with yarn:
+
+```
+yarn build
+```
+
+## Deployment
+
+This project is set up for easy deployment on Vercel. Connect your GitHub repository to Vercel for automatic deployments on every push to the main branch.
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## License
+
+This project is open source and available under the [MIT License](LICENSE).
+
+## Contact
+
+Project Link: https://github.com/mayurhapani/frontend_Expense_Management
+
+## Acknowledgements
+
+- [React](https://reactjs.org/)
+- [Vite](https://vitejs.dev/)
+- [Material-UI](https://mui.com/)
+- [Chart.js](https://www.chartjs.org/)
+- [Vercel](https://vercel.com/)
